@@ -1,11 +1,2 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="app_name">AppMovil</string>
-    <string name="screen_title">Mis tareas</string>
-    <string name="screen_subtitle">Organiza tus actividades. Toca una tarea para completarla o mantenla pulsada para eliminarla.</string>
-    <string name="task_hint">Escribe una tarea</string>
-    <string name="add_task">Agregar tarea</string>
-    <string name="empty_tasks">Todavía no hay tareas. ¡Agrega la primera!</string>
-    <string name="title_required">Escribe un título para la tarea</string>
-    <string name="task_deleted">Tarea eliminada</string>
-</resources>
+<resources><string name="app_name">AppMovil</string></resources>

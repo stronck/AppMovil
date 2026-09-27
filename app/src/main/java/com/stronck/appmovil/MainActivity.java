@@ -1,99 +1,57 @@
 package com.stronck.appmovil;
 
-import android.app.Activity;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ListView;
-import android.widget.TextView;
 import android.widget.Toast;
+import androidx.appcompat.app.AppCompatActivity;
 
-import java.util.ArrayList;
-import java.util.List;
+public class MainActivity extends AppCompatActivity {
+    private EditText emailInput;
+    private EditText passwordInput;
+    private DatabaseHelper database;
 
-/** Pantalla principal. Los datos se guardan localmente en SQLite. */
-public class MainActivity extends Activity {
-    private final List<Task> tasks = new ArrayList<>();
-    private TaskDatabaseHelper database;
-    private ArrayAdapter<String> adapter;
-    private EditText taskInput;
-    private TextView emptyMessage;
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        SharedPreferences prefs = getSharedPreferences("session", MODE_PRIVATE);
+        if (prefs.getBoolean("logged_in", false)) {
+            startActivity(new Intent(this, HomeActivity.class));
+            finish();
+            return;
+        }
         setContentView(R.layout.activity_main);
-        database = new TaskDatabaseHelper(this);
-
-        taskInput = findViewById(R.id.taskInput);
-        Button addButton = findViewById(R.id.addButton);
-        ListView taskList = findViewById(R.id.taskList);
-        emptyMessage = findViewById(R.id.emptyMessage);
-
-        adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, new ArrayList<>());
-        taskList.setAdapter(adapter);
-        taskList.setEmptyView(emptyMessage);
-
-        addButton.setOnClickListener(v -> addTask());
-        taskList.setOnItemClickListener((parent, view, position, id) -> toggleTask(position));
-        taskList.setOnItemLongClickListener((parent, view, position, id) -> {
-            Task task = tasks.get(position);
-            database.deleteTask(task.getId());
-            tasks.remove(position);
-            refreshTasks();
-            Toast.makeText(this, R.string.task_deleted, Toast.LENGTH_SHORT).show();
-            return true;
-        });
-
-        tasks.addAll(database.getAllTasks());
-        refreshTasks();
+        database = new DatabaseHelper(this);
+        emailInput = findViewById(R.id.emailInput);
+        passwordInput = findViewById(R.id.passwordInput);
+        Button login = findViewById(R.id.loginButton);
+        Button register = findViewById(R.id.goRegisterButton);
+        login.setOnClickListener(view -> login());
+        register.setOnClickListener(view -> startActivity(new Intent(this, RegisterActivity.class)));
     }
 
-    private void addTask() {
-        String title = taskInput.getText().toString();
-        if (!TaskValidator.isValidTitle(title)) {
-            taskInput.setError(getString(R.string.title_required));
+    private void login() {
+        String email = emailInput.getText().toString().trim();
+        String password = passwordInput.getText().toString();
+        if (!AuthValidator.isValidEmail(email) || password.isEmpty()) {
+            Toast.makeText(this, "Ingresa un correo válido y tu contraseña.", Toast.LENGTH_LONG).show();
             return;
         }
-        Task task = new Task(title);
-        long id = database.insertTask(task);
-        if (id == -1L) {
-            Toast.makeText(this, R.string.database_error, Toast.LENGTH_LONG).show();
+        DatabaseHelper.User user = database.authenticate(email, password);
+        if (user == null) {
+            Toast.makeText(this, "Credenciales incorrectas.", Toast.LENGTH_LONG).show();
             return;
         }
-        tasks.add(new Task(id, task.getTitle(), false));
-        taskInput.setText("");
-        refreshTasks();
+        getSharedPreferences("session", MODE_PRIVATE).edit()
+                .putBoolean("logged_in", true).putLong("user_id", user.id)
+                .putString("user_name", user.name).apply();
+        startActivity(new Intent(this, HomeActivity.class));
+        finish();
     }
 
-    private void toggleTask(int position) {
-        Task task = tasks.get(position);
-        task.setCompleted(!task.isCompleted());
-        if (!database.updateTask(task)) {
-            task.setCompleted(!task.isCompleted());
-            Toast.makeText(this, R.string.database_error, Toast.LENGTH_LONG).show();
-        }
-        refreshTasks();
-    }
-
-    private void refreshTasks() {
-        List<String> labels = new ArrayList<>();
-        for (Task task : tasks) {
-            labels.add((task.isCompleted() ? "✓ " : "○ ") + task.getTitle());
-        }
-        adapter.clear();
-        adapter.addAll(labels);
-        adapter.notifyDataSetChanged();
-        emptyMessage.setVisibility(tasks.isEmpty() ? View.VISIBLE : View.GONE);
-    }
-
-    @Override
-    protected void onDestroy() {
-        if (database != null) {
-            database.close();
-        }
+    @Override protected void onDestroy() {
+        if (database != null) database.close();
         super.onDestroy();
     }
 }
