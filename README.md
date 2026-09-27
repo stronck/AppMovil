@@ -1,6 +1,6 @@
 # AppMovil — GA8-220501096-AA1-EV01
 
-Aplicación Android nativa en Java para gestionar una lista sencilla de tareas. Proyecto académico de referencia que demuestra módulos, interfaz XML, navegación/acciones, buenas prácticas y pruebas unitarias.
+Aplicación Android nativa en Java para gestionar tareas con persistencia local mediante **SQLite**. No utiliza Firebase ni requiere conexión a Internet.
 
 ## Requisitos
 - Android Studio compatible con Android Gradle Plugin 8.6.1
@@ -8,21 +8,29 @@ Aplicación Android nativa en Java para gestionar una lista sencilla de tareas. 
 - Android SDK 35
 
 ## Ejecutar
-1. Clona `https://github.com/stronck/AppMovil.git`.
+1. Clona este repositorio.
 2. Abre la carpeta en Android Studio y espera la sincronización de Gradle.
 3. Ejecuta la configuración `app` en un emulador o dispositivo Android.
 
+## Funcionalidades
+- Crear tareas con validación de título.
+- Guardar tareas en una base de datos SQLite local.
+- Cargar tareas guardadas al abrir nuevamente la aplicación.
+- Marcar/desmarcar tareas como completadas.
+- Eliminar una tarea manteniéndola pulsada.
+
 ## Pruebas unitarias
-En Android Studio: clic derecho sobre `app/src/test` > Run, o desde la terminal ejecuta `./gradlew testDebugUnitTest`.
+En Android Studio ejecuta las pruebas de `app/src/test`, o usa:
+```bash
+./gradlew testDebugUnitTest
+```
+Las pruebas JUnit cubren títulos nulos/vacíos, espacios en blanco, normalización del título y estado de finalización. Están incluidas en el repositorio; deben ejecutarse en un entorno con JDK/Gradle configurado para confirmar el resultado.
 
-Las pruebas cubren validación de títulos vacíos, espacios en blanco y títulos válidos. Son pruebas unitarias locales; no se afirma que se hayan ejecutado en este entorno.
+## Arquitectura
+- **Presentación:** `MainActivity` y `res/layout/activity_main.xml`.
+- **Modelo y validación:** `Task` y `TaskValidator`.
+- **Persistencia:** `TaskDatabaseHelper`, basado en `SQLiteOpenHelper`.
+- **Recursos:** textos, colores y tema en `res/values`.
 
-## Estructura
-- `MainActivity`: interacción y presentación de la lista.
-- `Task`: modelo de datos de una tarea.
-- `TaskValidator`: validación independiente y testeable.
-- `res/layout/activity_main.xml`: interfaz XML.
-- `app/src/test`: pruebas unitarias JUnit.
-
-## Alcance y seguridad
-Esta versión almacena las tareas en memoria: al cerrar el proceso, los datos se reinician. No solicita permisos innecesarios ni contiene credenciales. Firebase no se configura porque requiere un proyecto y un archivo `google-services.json` propios. Para producción se recomienda persistencia local (Room), manejo de errores y pruebas de interfaz.
+## Persistencia y seguridad
+La base de datos `appmovil.db` se crea en el almacenamiento privado de la aplicación. No se solicitan permisos de Internet ni se almacenan credenciales. Los datos permanecen después de cerrar y volver a abrir la app; se eliminan al desinstalar la aplicación o borrar sus datos. La migración de esquema debe implementarse cuando cambie la versión de la base de datos.
