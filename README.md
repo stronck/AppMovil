@@ -1,36 +1,48 @@
-# AppMovil — GA8-220501096-AA1-EV01
+# Gestión de tareas web — GA8-220501096-AA1-EV01
 
-Aplicación Android nativa en Java para gestionar tareas con persistencia local mediante **SQLite**. No utiliza Firebase ni requiere conexión a Internet.
+Aplicación **orientada a la web** para gestionar tareas, desarrollada con HTML, CSS y JavaScript en el cliente, Python/Flask en el servidor y SQLite para persistencia. No utiliza Firebase.
+
+La implementación web de la evidencia está en **`web/`**. La carpeta `app/` conserva el código Android que ya existía en el repositorio; para ejecutar y evaluar la versión web, sigue las instrucciones de `web/README.md`.
+
+## Funcionalidades web
+- Crear tareas con título obligatorio.
+- Consultar las tareas guardadas.
+- Marcar y desmarcar tareas como completadas.
+- Eliminar tareas.
+- Conservar los datos en SQLite después de reiniciar el servidor.
 
 ## Requisitos
-- Android Studio compatible con Android Gradle Plugin 8.6.1
-- JDK 17
-- Android SDK 35
+- Python 3.10 o superior.
+- pip.
 
-## Ejecutar
-1. Clona este repositorio.
-2. Abre la carpeta en Android Studio y espera la sincronización de Gradle.
-3. Ejecuta la configuración `app` en un emulador o dispositivo Android.
+## Ejecutar la versión web
+Desde la raíz del repositorio:
 
-## Funcionalidades
-- Crear tareas con validación de título.
-- Guardar tareas en una base de datos SQLite local.
-- Cargar tareas guardadas al abrir nuevamente la aplicación.
-- Marcar/desmarcar tareas como completadas.
-- Eliminar una tarea manteniéndola pulsada.
-
-## Pruebas unitarias
-En Android Studio ejecuta las pruebas de `app/src/test`, o usa:
 ```bash
-./gradlew testDebugUnitTest
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -r web/requirements.txt
+cd web
+python app.py
 ```
-Las pruebas JUnit cubren títulos nulos/vacíos, espacios en blanco, normalización del título y estado de finalización. Están incluidas en el repositorio; deben ejecutarse en un entorno con JDK/Gradle configurado para confirmar el resultado.
 
-## Arquitectura
-- **Presentación:** `MainActivity` y `res/layout/activity_main.xml`.
-- **Modelo y validación:** `Task` y `TaskValidator`.
-- **Persistencia:** `TaskDatabaseHelper`, basado en `SQLiteOpenHelper`.
-- **Recursos:** textos, colores y tema en `res/values`.
+En Windows, activa el entorno con `.venv\\Scripts\\activate`. Abre http://127.0.0.1:5000 en el navegador.
 
-## Persistencia y seguridad
-La base de datos `appmovil.db` se crea en el almacenamiento privado de la aplicación. No se solicitan permisos de Internet ni se almacenan credenciales. Los datos permanecen después de cerrar y volver a abrir la app; se eliminan al desinstalar la aplicación o borrar sus datos. La migración de esquema debe implementarse cuando cambie la versión de la base de datos.
+## Ejecutar pruebas web
+Desde la carpeta `web`:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+Las pruebas están definidas en `web/tests/test_app.py`. Ejecutarlas en un entorno configurado y guardar el resultado para documentar la verificación.
+
+## Arquitectura web
+- **Presentación:** HTML5, CSS3 y JavaScript en `web/templates/` y `web/static/`.
+- **Aplicación/API:** rutas Flask en `web/app.py`.
+- **Persistencia:** SQLite, con consultas parametrizadas.
+- **Pruebas:** `unittest` y el cliente de pruebas de Flask.
+
+La aplicación escucha por defecto en `127.0.0.1` y no incluye autenticación multiusuario. No debe exponerse a Internet sin añadir controles de acceso y configuración de despliegue apropiados.
+
+Consulta `web/README.md` para instalación, dependencias, seguridad, arquitectura y pruebas.
