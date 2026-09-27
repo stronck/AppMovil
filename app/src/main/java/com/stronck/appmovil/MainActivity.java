@@ -13,9 +13,10 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Pantalla principal: permite agregar tareas y marcarlas como completadas. */
+/** Pantalla principal. Los datos se guardan localmente en SQLite. */
 public class MainActivity extends Activity {
     private final List<Task> tasks = new ArrayList<>();
+    private TaskDatabaseHelper database;
     private ArrayAdapter<String> adapter;
     private EditText taskInput;
     private TextView emptyMessage;
@@ -24,6 +25,7 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        database = new TaskDatabaseHelper(this);
 
         taskInput = findViewById(R.id.taskInput);
         Button addButton = findViewById(R.id.addButton);
@@ -37,11 +39,16 @@ public class MainActivity extends Activity {
         addButton.setOnClickListener(v -> addTask());
         taskList.setOnItemClickListener((parent, view, position, id) -> toggleTask(position));
         taskList.setOnItemLongClickListener((parent, view, position, id) -> {
+            Task task = tasks.get(position);
+            database.deleteTask(task.getId());
             tasks.remove(position);
             refreshTasks();
             Toast.makeText(this, R.string.task_deleted, Toast.LENGTH_SHORT).show();
             return true;
         });
+
+        tasks.addAll(database.getAllTasks());
+        refreshTasks();
     }
 
     private void addTask() {
@@ -50,7 +57,13 @@ public class MainActivity extends Activity {
             taskInput.setError(getString(R.string.title_required));
             return;
         }
-        tasks.add(new Task(title));
+        Task task = new Task(title);
+        long id = database.insertTask(task);
+        if (id == -1L) {
+            Toast.makeText(this, R.string.database_error, Toast.LENGTH_LONG).show();
+            return;
+        }
+        tasks.add(new Task(id, task.getTitle(), false));
         taskInput.setText("");
         refreshTasks();
     }
@@ -58,6 +71,10 @@ public class MainActivity extends Activity {
     private void toggleTask(int position) {
         Task task = tasks.get(position);
         task.setCompleted(!task.isCompleted());
+        if (!database.updateTask(task)) {
+            task.setCompleted(!task.isCompleted());
+            Toast.makeText(this, R.string.database_error, Toast.LENGTH_LONG).show();
+        }
         refreshTasks();
     }
 
@@ -70,5 +87,13 @@ public class MainActivity extends Activity {
         adapter.addAll(labels);
         adapter.notifyDataSetChanged();
         emptyMessage.setVisibility(tasks.isEmpty() ? View.VISIBLE : View.GONE);
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (database != null) {
+            database.close();
+        }
+        super.onDestroy();
     }
 }
