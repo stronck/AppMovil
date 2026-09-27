@@ -1,6 +1,7 @@
 """Aplicación web de gestión de tareas con Flask y SQLite."""
 import os
 import sqlite3
+from contextlib import closing
 from pathlib import Path
 
 from flask import Flask, jsonify, render_template, request
@@ -27,7 +28,7 @@ def create_app(test_config=None):
         return connection
 
     def init_db():
-        with connect_db() as db:
+        with closing(connect_db()) as db, db:
             db.execute("""
                 CREATE TABLE IF NOT EXISTS tasks (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -67,7 +68,7 @@ def create_app(test_config=None):
 
     @app.get("/api/tasks")
     def list_tasks():
-        with connect_db() as db:
+        with closing(connect_db()) as db, db:
             rows = db.execute(
                 "SELECT id, title, completed, created_at FROM tasks "
                 "ORDER BY id DESC"
@@ -88,7 +89,7 @@ def create_app(test_config=None):
         if len(title) > 200:
             return jsonify(error="El título no puede superar 200 caracteres."), 400
 
-        with connect_db() as db:
+        with closing(connect_db()) as db, db:
             cursor = db.execute("INSERT INTO tasks (title) VALUES (?)", (title,))
             row = db.execute(
                 "SELECT id, title, completed, created_at FROM tasks WHERE id = ?",
@@ -101,7 +102,7 @@ def create_app(test_config=None):
         data = request.get_json(silent=True)
         if not isinstance(data, dict) or not isinstance(data.get("completed"), bool):
             return jsonify(error="El campo completed debe ser booleano."), 400
-        with connect_db() as db:
+        with closing(connect_db()) as db, db:
             cursor = db.execute(
                 "UPDATE tasks SET completed = ? WHERE id = ?",
                 (int(data["completed"]), task_id),
@@ -116,7 +117,7 @@ def create_app(test_config=None):
 
     @app.delete("/api/tasks/<int:task_id>")
     def delete_task(task_id):
-        with connect_db() as db:
+        with closing(connect_db()) as db, db:
             cursor = db.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
         if cursor.rowcount == 0:
             return jsonify(error="La tarea no existe."), 404
