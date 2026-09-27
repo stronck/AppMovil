@@ -42,4 +42,12 @@ public class TaskValidatorTest {
         task.setCompleted(true);
         assertTrue(task.isCompleted());
     }
+
+    @Test
+    public void databaseTaskConstructorPreservesIdAndCompletedState() {
+        Task task = new Task(42L, "Repasar SQLite", true);
+        assertEquals(42L, task.getId());
+        assertEquals("Repasar SQLite", task.getTitle());
+        assertTrue(task.isCompleted());
+    }
 }
